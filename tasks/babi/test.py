@@ -1,13 +1,18 @@
 # -*- coding: utf-8 -*-
 
-from recurrent_controller import RecurrentController
+import sys
+import os
+
+sys.path.append(os.path.join("..","../"))
 from dnc.dnc import DNC
+
+from recurrent_controller import RecurrentController
 import tensorflow as tf
 import numpy as np
 import pickle
-import sys
-import os
 import re
+
+# In[]
 
 def llprint(message):
     sys.stdout.write(message)
@@ -18,8 +23,10 @@ def load(path):
 
 def onehot(index, size):
     vec = np.zeros(size, dtype=np.float32)
-    vec[index] = 1.0
+    vec[np.int(index)] = 1.0
     return vec
+
+# In[]
 
 def prepare_sample(sample, target_code, word_space_size):
     input_vec = np.array(sample[0]['inputs'], dtype=np.float32)
@@ -41,6 +48,8 @@ def prepare_sample(sample, target_code, word_space_size):
         np.reshape(weights_vec, (1, -1, 1))
     )
 
+# In[]s
+
 ckpts_dir = './checkpoints/'
 lexicon_dictionary = load('./data/en-10k/lexicon-dict.pkl')
 question_code = lexicon_dictionary["?"]
@@ -51,22 +60,26 @@ for entryname in os.listdir('./data/en-10k/test/'):
     entry_path = os.path.join('./data/en-10k/test/', entryname)
     if os.path.isfile(entry_path):
         test_files.append(entry_path)
+        
+# In[]s
 
 graph = tf.Graph()
 with graph.as_default():
     with tf.Session(graph=graph) as session:
         
+        word_space= len(lexicon_dictionary)
+        
         ncomputer = DNC(
             RecurrentController,
-            input_size=len(lexicon_dictionary),
-            output_size=len(lexicon_dictionary),
+            input_size=word_space,
+            output_size=word_space,
             max_sequence_length=100,
             memory_words_num=256,
             memory_word_size=64,
             memory_read_heads=4,
         )
         
-        ncomputer.restore(session, ckpts_dir, 'step-500005')
+        ncomputer.restore(session, ckpts_dir, 'step-36643')
         
         outputs, _ = ncomputer.get_outputs()
         softmaxed = tf.nn.softmax(outputs)
@@ -96,7 +109,8 @@ with graph.as_default():
                 input_vec, _, seq_len, _ = prepare_sample([story], target_code, len(lexicon_dictionary))
                 softmax_output = session.run(softmaxed, feed_dict={
                         ncomputer.input_data: input_vec,
-                        ncomputer.sequence_length: seq_len
+                        ncomputer.sequence_length: seq_len,
+                        ncomputer.input_mode: np.zeros((1, seq_len, word_space))
                 })
 
                 softmax_output = np.squeeze(softmax_output, axis=0)
@@ -120,9 +134,9 @@ with graph.as_default():
             tasks_results[task_number] = error_rate
             llprint("\r%s ... %.3f%% Error Rate.\n" % (task_name, error_rate * 100))
         
-        print "\n"
-        print "%-27s%-27s%s" % ("Task", "Result", "Paper's Mean")
-        print "-------------------------------------------------------------------"
+        print("\n")
+        print("%-27s%-27s%s" % ("Task", "Result", "Paper's Mean"))
+        print("-------------------------------------------------------------------")
         paper_means = {
             '1': '9.0±12.6%', '2': '39.2±20.5%', '3': '39.6±16.4%',
             '4': '0.4±0.7%', '5': '1.5±1.0%', '6': '6.9±7.5%', '7': '9.8±7.0%',
@@ -134,11 +148,11 @@ with graph.as_default():
         for k in range(20):
             task_id = str(k + 1)
             task_result = "%.2f%%" % (tasks_results[task_id] * 100)
-            print "%-27s%-27s%s" % (tasks_names[task_id], task_result, paper_means[task_id])
-        print "-------------------------------------------------------------------"
-        all_tasks_results = [v for _,v in tasks_results.iteritems()]
+            print("%-27s%-27s%s" % (tasks_names[task_id], task_result, paper_means[task_id]))
+        print("-------------------------------------------------------------------")
+        all_tasks_results = [v for _,v in tasks_results.items()]
         results_mean = "%.2f%%" % (np.mean(all_tasks_results) * 100)
         failed_count = "%d" % (np.sum(np.array(all_tasks_results) > 0.05))
         
-        print "%-27s%-27s%s" % ("Mean Err.", results_mean, paper_means['mean'])
-        print "%-27s%-27s%s" % ("Failed (err. > 5%)", failed_count, paper_means['fail'])
+        print("%-27s%-27s%s" % ("Mean Err.", results_mean, paper_means['mean']))
+        print("%-27s%-27s%s" % ("Failed (err. > 5%)", failed_count, paper_means['fail']))

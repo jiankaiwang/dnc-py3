@@ -24,9 +24,9 @@ The model was first trained on a length-2 series of random binary vectors of siz
 
 The following plots show the learning curves for the length-2 and length-4 models respectively.
 
-![series-2](/assets/model-series-2-curve.png)
+![series-2](../../docs/imgs/model-series-2-curve.png)
 
-![series-4](/assets/model-series-4-curve.png)
+![series-4](../../docs/imgs/model-series-4-curve.png)
 
 *Attempting to train a length-4 model directly always resulted in __NaNs__. The paper mentioned using curriculum learning for the graph and mini-SHRDLU tasks, but it did not mention any thing about the copy task, so there's a possibility that this is not the most efficient method.*
 
@@ -44,7 +44,7 @@ $python tasks/copy/train-series.py --length=4 --checkpoint=step-100000 --iterati
 
 The model was trained directly on a single input of length between 1 and 10 and the length was chosen randomly at each run, so no curriculum learning was used. The following plot shows the learning curve of the single model.
 
-![single-10](/assets/model-single-curve.png)
+![single-10](../../docs/imgs/model-single-curve.png)
 
 #### Retraining
 

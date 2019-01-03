@@ -7,8 +7,11 @@ import getopt
 import sys
 import os
 
+sys.path.append(os.path.join("..",".."))
 from dnc.dnc import DNC
 from feedforward_controller import FeedforwardController
+
+# In[]
 
 def llprint(message):
     sys.stdout.write(message)
@@ -34,10 +37,11 @@ def binary_cross_entropy(predictions, targets):
         -1 * targets * tf.log(predictions) - (1 - targets) * tf.log(1 - predictions)
     )
 
+# In[]
 
 if __name__ == '__main__':
 
-    dirname = os.path.dirname(__file__)
+    dirname = "./"
     ckpts_dir = os.path.join(dirname , 'checkpoints')
     tb_logs_dir = os.path.join(dirname, 'logs')
 
@@ -56,18 +60,18 @@ if __name__ == '__main__':
     iterations = 100000
     start_step = 0
 
-    options,_ = getopt.getopt(sys.argv[1:], '', ['checkpoint=', 'iterations=', 'start=', 'length='])
-
-    for opt in options:
-        if opt[0] == '--checkpoint':
-            from_checkpoint = opt[1]
-        elif opt[0] == '--iterations':
-            iterations = int(opt[1])
-        elif opt[0] == '--start':
-            start_step = int(opt[1])
-        elif opt[0] == '--length':
-            series_length = int(opt[1])
-            sequence_max_length = 11 * int(opt[1])
+#    options,_ = getopt.getopt(sys.argv[1:], '', ['checkpoint=', 'iterations=', 'start=', 'length='])
+#
+#    for opt in options:
+#        if opt[0] == '--checkpoint':
+#            from_checkpoint = opt[1]
+#        elif opt[0] == '--iterations':
+#            iterations = int(opt[1])
+#        elif opt[0] == '--start':
+#            start_step = int(opt[1])
+#        elif opt[0] == '--length':
+#            series_length = int(opt[1])
+#            sequence_max_length = 11 * int(opt[1])
 
     graph = tf.Graph()
 
@@ -77,7 +81,7 @@ if __name__ == '__main__':
             llprint("Building Computational Graph ... ")
 
             optimizer = tf.train.RMSPropOptimizer(learning_rate, momentum=momentum)
-            summerizer = tf.train.SummaryWriter(tb_logs_dir, session.graph)
+            summerizer = tf.summary.FileWriter(tb_logs_dir, session.graph)
 
             ncomputer = DNC(
                 FeedforwardController,
@@ -91,7 +95,7 @@ if __name__ == '__main__':
             )
 
             output, _ = ncomputer.get_outputs()
-            squashed_output = tf.clip_by_value(tf.sigmoid(output), 1e-6, 1. - 1e-6)
+            squashed_output = tf.clip_by_value(tf.sigmoid(output), 1e-6, 1. -1e-6)
 
             loss = binary_cross_entropy(squashed_output, ncomputer.target_output)
 
@@ -100,14 +104,14 @@ if __name__ == '__main__':
             gradients = optimizer.compute_gradients(loss)
             for i, (grad, var) in enumerate(gradients):
                 if grad is not None:
-                    summeries.append(tf.histogram_summary(var.name + '/grad', grad))
+                    summeries.append(tf.summary.histogram(var.name + '/grad', grad))
                     gradients[i] = (tf.clip_by_value(grad, -10, 10), var)
 
             apply_gradients = optimizer.apply_gradients(gradients)
 
-            summeries.append(tf.scalar_summary("Loss", loss))
+            summeries.append(tf.summary.scalar("Loss", loss))
 
-            summerize_op = tf.merge_summary(summeries)
+            summerize_op = tf.summary.merge(summeries)
             no_summerize = tf.no_op()
 
             llprint("Done!\n")
@@ -127,7 +131,7 @@ if __name__ == '__main__':
             start = 0 if start_step == 0 else start_step + 1
             end = start_step + iterations + 1
 
-            for i in xrange(start, end):
+            for i in range(start, end):
                 llprint("\rIteration %d/%d" % (i, end - 1))
 
                 input_series = []
@@ -147,11 +151,12 @@ if __name__ == '__main__':
                 loss_value, _, summary = session.run([
                     loss,
                     apply_gradients,
-                    summerize_op if summerize else no_summerize
+                    summerize_op
                 ], feed_dict={
                     ncomputer.input_data: one_big_input,
                     ncomputer.target_output: one_big_output,
-                    ncomputer.sequence_length: sequence_max_length
+                    ncomputer.sequence_length: sequence_max_length,
+                    ncomputer.input_mode: np.zeros((batch_size, sequence_max_length, output_size))
                 })
 
                 last_100_losses.append(loss_value)

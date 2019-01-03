@@ -32,7 +32,7 @@ In training time, a story is randomly sampled form the training data, encoded in
 
 Training span about 500k iterations and took about 7 consecutive days on an AWS P2 instance with a Tesla K80 GPU and 16GB of RAM. The following plot contains the learning curve throughout training.
 
-![learning-curve](../../assets/babi-training.png)
+![learning-curve](../../docs/imgs/babi-training.png)
 
 ### Testing
 

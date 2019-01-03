@@ -167,7 +167,7 @@ if __name__ == '__main__':
                         ncomputer.input_data: input_data,
                         ncomputer.target_output: target_output,
                         ncomputer.sequence_length: seq_len,
-                        ncomputer.input_mode: np.ones((batch_size, seq_len, output_size)),
+                        ncomputer.input_mode: np.zeros((batch_size, seq_len, output_size)),
                         loss_weights: weights
                     })
 

@@ -7,8 +7,11 @@ import getopt
 import sys
 import os
 
+sys.path.append(os.path.join("..",".."))
 from dnc.dnc import DNC
 from feedforward_controller import FeedforwardController
+
+# In[]
 
 def llprint(message):
     sys.stdout.write(message)
@@ -34,6 +37,7 @@ def binary_cross_entropy(predictions, targets):
         -1 * targets * tf.log(predictions) - (1 - targets) * tf.log(1 - predictions)
     )
 
+# In[]
 
 if __name__ == '__main__':
 
@@ -135,7 +139,8 @@ if __name__ == '__main__':
                 ], feed_dict={
                     ncomputer.input_data: input_data,
                     ncomputer.target_output: target_output,
-                    ncomputer.sequence_length: 2 * random_length + 1
+                    ncomputer.sequence_length: 2 * random_length + 1,
+                    ncomputer.input_mode: np.zeros((batch_size, 2 * random_length + 1, output_size))
                 })
 
                 last_100_losses.append(loss_value)

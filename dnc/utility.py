@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
-from tensorflow.python.ops import gen_state_ops
 
+# In[]
 
 class utility:
     def __init__(self):
@@ -35,7 +35,7 @@ class utility:
         else:
             v_shape = v.get_shape().as_list()
             if u_shape != v_shape:
-                raise VauleError("Shapes %s and %s do not match" % (u_shape, v_shape))
+                raise ValueError("Shapes %s and %s do not match" % (u_shape, v_shape))
 
         n = u_shape[0] if not is_batch else u_shape[1]
 
@@ -108,7 +108,8 @@ class utility:
         Parameters:
         ----------
         array: TensorArray
-            the tensor array to pack
+            the tensor array to pack, the length of array's shape must be >= 2
+            e.g. (10,2). one-dimension array will cause a error
         axis: int
             the axis to pack the array along
 
@@ -120,6 +121,7 @@ class utility:
         shape = packed_tensor.get_shape()
         rank = len(shape)
 
+        # TODO: handle one-dimensional array
         dim_permutation = [axis] + list(range(1, axis)) + [0]  + list(range(axis + 1, rank))
         correct_shape_tensor = tf.transpose(packed_tensor, dim_permutation)
 
